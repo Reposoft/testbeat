@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'testbeat'
-  s.version     = '0.5.0'
+  s.version     = '0.5.1'
   s.date        = '2015-10-14'
   s.summary     = 'REST acceptance testing framework'
   s.description = 'Rspec spec_helper and Vagrant integration for HTTP level testing, on a box from the outside'
@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.email       = 'solsson@gmail.com'
   s.files       = [
     'lib/testbeat.rb',
-    'lib/spec_helper.rb'
+    'lib/rspec/spec_helper.rb'
   ]
   s.homepage    = 'https://github.com/Reposoft/testbeat'
   s.license     = 'MIT'

@@ -1,7 +1,7 @@
 
 #require 'testbeat/rspec'
 #require 'testbeat/vagrant'
-require_relative './spec_helper.rb'
+require_relative './rspec/spec_helper.rb'
 
 #module testbeat
 #

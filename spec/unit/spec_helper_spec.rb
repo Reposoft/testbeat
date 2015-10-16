@@ -8,7 +8,7 @@ include WebMock::API
 ENV['NODE'] = "testhost01"
 
 describe "testbeat_rspec" do
-  require_relative "../../lib/spec_helper.rb"
+  require_relative "../../lib/rspec/spec_helper.rb"
 
   before(:all) do
 
