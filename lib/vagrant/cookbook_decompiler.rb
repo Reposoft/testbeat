@@ -3,7 +3,7 @@
 
 require 'set'
 
-$cookbooks_dir = config_path = File.expand_path("../../../../cookbooks", __FILE__)
+$cookbooks_dir = config_path = File.join(Dir.pwd, "cookbooks")
 
 def get_default_recipe(cookbook_name)
   return File.open($cookbooks_dir + "/" + cookbook_name + "/recipes/default.rb","r")
