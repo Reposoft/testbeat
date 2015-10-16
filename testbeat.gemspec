@@ -8,7 +8,9 @@ Gem::Specification.new do |s|
   s.email       = 'solsson@gmail.com'
   s.files       = [
     'lib/testbeat.rb',
-    'lib/rspec/spec_helper.rb'
+    'lib/rspec/spec_helper.rb',
+    'lib/vagrant/noderunner.rb',
+    'lib/vagrant/cookbook_decompiler.rb'
   ]
   s.homepage    = 'https://github.com/Reposoft/testbeat'
   s.license     = 'MIT'
