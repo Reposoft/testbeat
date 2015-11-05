@@ -14,6 +14,26 @@ require "logger"
 # global so we don't need to pass this around to utility classes
 $logger = Logger.new('testbeat-debug.log')
 
+HTTP_VERBS = {
+  'COPY'      => Net::HTTP::Copy,
+  'DELETE'    => Net::HTTP::Delete,
+  'GET'       => Net::HTTP::Get,
+  'HEAD'      => Net::HTTP::Head,
+  'LOCK'      => Net::HTTP::Lock,
+  'MKCOL'     => Net::HTTP::Mkcol,
+  'MOVE'      => Net::HTTP::Move,
+  'OPTIONS'   => Net::HTTP::Options,
+  'PATCH'     => Net::HTTP::Patch,
+  'POST'      => Net::HTTP::Post,
+  'PROPFIND'  => Net::HTTP::Propfind,
+  'PROPPATCH' => Net::HTTP::Proppatch,
+  'PUT'       => Net::HTTP::Put,
+  'TRACE'     => Net::HTTP::Trace,
+  'UNLOCK'    => Net::HTTP::Unlock
+}
+
+HTTP_VERB_RESOURCE = /(COPY|DELETE|GET|HEAD|LOCK|MKCOL|MOVE|OPTIONS|PATCH|POST|PROPFIND|PROPPATCH|PUT|TRACE|UNLOCK)\s+(\S*)(.*)/
+
 class TestbeatNode
 
   def initialize(nodename)
@@ -329,6 +349,7 @@ class TestbeatContext
 
   def parse_description_args(example_group_description_args)
     a = example_group_description_args[0]
+
     /unencrypted/i.match(a) {
       @unencrypted = true
     }
@@ -336,16 +357,17 @@ class TestbeatContext
     /unauthenticated/i.match(a) {
       @unauthenticated = true
     }
-    # We could iterate methods in Net::HTTP and support all
-    # Change method to rest_method for consistency
-    /(GET|HEAD|POST)\s+(\S*)(.*)/.match(a) { |rest|
+
+    HTTP_VERB_RESOURCE.match(a) { |rest|
       @rest = true
       @method = rest[1]
       @resource = rest[2]
     }
+
     /reprovision/i.match(a) {
       @reprovision = true
     }
+
     # idea: nodes that should not be modified (production etc), particularily not through shell
     #/untouchable/
   end
@@ -381,18 +403,25 @@ class TestbeatRestRequest
       :read_timeout => @timeout
       ) do |http|
 
-      req = Net::HTTP::Get.new(@testbeat.resource)
-      if @testbeat.method == 'POST'
-        req = Net::HTTP::Post.new(@testbeat.resource)
-        if @testbeat.form?
-          req.set_form_data(@testbeat.form)
-        end
-        if @testbeat.body?
-          req.body = @testbeat.body
-        end
+      if not HTTP_VERBS.has_key?(@testbeat.method)
+        raise "Testbeat can't find HTTP verb #{@testbeat.method}"
       end
+
+      req = HTTP_VERBS[@testbeat.method].new(@testbeat.resource)
       if @testbeat.headers?
         @testbeat.headers.each {|name, value| req[name] = value }
+      end
+      if @testbeat.form?
+        if not req.methods.include? :set_form_data
+          raise "Testbeat can't set form data for HTTP verb #{@testbeat.method}"
+        end
+        req.set_form_data(@testbeat.form)
+      end
+      if @testbeat.body?
+        if not req.request_body_permitted?
+          raise "Testbeat can't set body for HTTP verb #{@testbeat.method}"
+        end
+        req.body = @testbeat.body
       end
 
       @response = http.request(req) # Net::HTTPResponse object
