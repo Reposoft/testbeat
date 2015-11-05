@@ -15,6 +15,9 @@ describe "testbeat_rspec" do
     stub_request(:get, "http://testhost01/").
       to_return(:status => 301, :body => "", :headers => {'Location' => 'https://testhost01/'})
 
+    stub_request(:head, "http://testhost01/").
+      to_return(:status => 301, :headers => {'Location' => 'https://testhost01/'})
+
     stub_request(:get, "http://testhost01/insecure-resource.html").
       to_return(:status => 200, :body => "<html><head><title>Test</title><body><h1>Page</h1></body></html>", :headers => {})
 
@@ -23,6 +26,9 @@ describe "testbeat_rspec" do
 
     stub_request(:get, "https://testhost01/").
       to_return(:status => 301, :body => "", :headers => {'Location' => 'https://testhost01/some/start.html'})
+
+    stub_request(:head, "https://testhost01/").
+      to_return(:status => 301, :headers => {'Location' => 'https://testhost01/some/start.html'})
 
     stub_request(:get, "https://testhost01/some/start.html").
       to_return(:status => 200, :body => "<html><head><title>Test</title><body><h1>Start</h1></body></html>", :headers => {})
