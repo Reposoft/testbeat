@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'testbeat'
-  s.version     = '0.5.2'
-  s.date        = '2015-11-05'
+  s.version     = '0.5.3'
+  s.date        = '2015-11-10'
   s.summary     = 'REST acceptance testing framework'
   s.description = 'Rspec spec_helper and Vagrant integration for HTTP level testing, on a box from the outside'
   s.authors     = ['Staffan Olsson']
@@ -17,9 +17,10 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '~> 2.0'
 
-  s.add_development_dependency "rspec", "~> 3.3"
-  s.add_development_dependency "hashie"
+  s.add_dependency "rspec", "~> 3.3"
+  s.add_dependency "hashie", '~> 0'
 
-  # only used during development
-  s.add_development_dependency "awesome_print"
+  # used during development for debugging rspec contexts, but may not be completely cleaned out
+  #s.add_development_dependency "awesome_print", '~> 0'
+  s.add_dependency "awesome_print", '~> 0'
 end
