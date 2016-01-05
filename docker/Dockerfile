@@ -6,9 +6,9 @@ RUN gem install testbeat
 
 ENV spec=/spec/*_spec.rb
 
-# legacy name, confusing in microservices context
-ENV NODE=service
-
 VOLUME /spec
 
-ENTRYPOINT ["/usr/local/bundle/bin/rspec", "-c", "-f d", $spec]
+# legacy env var name is NODE, confusing in microservices context, target service is now resolved from "specd" link
+ENV NODE=specd
+
+ENTRYPOINT [ "sh", "-c", "/usr/local/bundle/bin/rspec", "-c", "-f d", "$spec"]
