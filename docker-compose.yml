@@ -1,7 +1,7 @@
 # runs testbeat tests with a sample System-Under-Test, an httpd server
 spec:
   #image: solsson/testbeat
-  build: ./docker/
+  build: ./docker-specwatch/
   volumes:
    - ./docker/spec:/spec
   links:
