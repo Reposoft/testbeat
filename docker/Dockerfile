@@ -11,4 +11,4 @@ VOLUME /spec
 # legacy env var name is NODE, confusing in microservices context, target service is now resolved from "specd" link
 ENV NODE=specd
 
-ENTRYPOINT [ "sh", "-c", "/usr/local/bundle/bin/rspec", "-c", "-f d", "$spec"]
+ENTRYPOINT [ "sh", "-c", "/usr/local/bundle/bin/rspec", "-c", "$spec"]
