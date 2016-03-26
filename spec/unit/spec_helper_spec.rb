@@ -229,6 +229,34 @@ describe "testbeat_rspec" do
 
   end
 
+  describe "GET /customport", port: 12345 do
+
+    before(:all) do
+
+      WebMock.reset!
+
+      stub_request(:get, "http://testhost01:12345/customport").
+        to_return(:status => 200, :body => "on custom port")
+
+      stub_request(:get, "https://testhost01:12345/customport").
+        to_return(:status => 200, :body => "on https custom port")
+
+    end
+
+    it "Should switch port for that particular request" do
+      expect(@response.body).to match(/on https custom port/)
+    end
+
+    describe "unencrypted" do
+
+      it "Should use the same custom port still" do
+        expect(@response.body).to match(/on custom port/)
+      end
+
+    end
+
+  end
+
   describe "Shell integration" do
 
     it "Exposes a 'shell' object that supports exec" do

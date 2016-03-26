@@ -273,6 +273,14 @@ class TestbeatContext
     @method
   end
 
+  def port
+    @rest_port
+  end
+
+  def port?
+    !!port
+  end
+
   def headers
     @rest_headers
   end
@@ -343,6 +351,9 @@ class TestbeatContext
       if example_group[:headers]
         @rest_headers = example_group[:headers]
       end
+      if example_group[:port]
+        @rest_port = example_group[:port]
+      end
     end
 
   end
@@ -397,6 +408,7 @@ class TestbeatRestRequest
     end
     # If there's no built in auth support in Net::HTTP we can check for 401 here and re-run the request with auth header
     Net::HTTP.start(@node.host,
+      @testbeat.port,
       :use_ssl => !@testbeat.unencrypted?,
       :verify_mode => OpenSSL::SSL::VERIFY_NONE,  # Ideally verify should be enabled for non-labs hosts (anything with a FQDN including dots)
       :open_timeout => @timeout,
