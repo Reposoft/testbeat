@@ -7,10 +7,14 @@ require_relative './cookbook_decompiler.rb'
 # dependencies for the lib running node tests, preferrably discovered here instead of in node loop
 require 'rspec'
 require 'set'
+require 'open3'
 
 def get_hostname(node: $node, vagrant_dir: $vagrant_dir)
   [node, vagrant_dir]
-  return node
+  cmd_hostname = "cat /etc/hostname"
+  hostname = Open3.popen3("cd #{ vagrant_dir + node }; vagrant ssh -c \"#{cmd_hostname}\"") { |stdin, stdout, stderr, wait_thr| stdout.read }
+  puts "Vagrant node hostname: #{hostname}"
+  return hostname
 end
 
 # Get first matching subgroup
