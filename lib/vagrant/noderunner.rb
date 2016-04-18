@@ -114,6 +114,7 @@ def run_tests(recipes, hostname, out: "#{$vagrant_dir}#{$node}/generated/", test
   [recipes, hostname, out, testglob, verbose]
   rspec_ok = true # if no tests => no failure
 
+  puts "Starting test run for hostname: #{hostname}"
   if Dir.exists?(out)
     puts "Using existing output directory #{out}"
     Dir.glob("#{out}acceptance*").each do |previous|
