@@ -7,6 +7,15 @@ require_relative './cookbook_decompiler.rb'
 # dependencies for the lib running node tests, preferrably discovered here instead of in node loop
 require 'rspec'
 require 'set'
+require 'open3'
+
+def get_hostname(node: $node, vagrant_dir: $vagrant_dir)
+  [node, vagrant_dir]
+  cmd_hostname = "cat /etc/hostname"
+  hostname = Open3.popen3("cd #{ vagrant_dir + node }; vagrant ssh -c \"#{cmd_hostname}\"") { |stdin, stdout, stderr, wait_thr| stdout.read }
+  puts "Vagrant node hostname: #{hostname}"
+  return hostname
+end
 
 # Get first matching subgroup
 #  stripped of quotes and leading/trailing whitespace
@@ -101,10 +110,11 @@ def run_rspec(node, path, outf, verbose)
   return $?.success?
 end
 
-def run_tests(recipes, out: "#{$vagrant_dir}#{$node}/generated/", testglob: "test/acceptance/*.rb", verbose: true)
-  [recipes, out, testglob, verbose]
+def run_tests(recipes, hostname, out: "#{$vagrant_dir}#{$node}/generated/", testglob: "test/acceptance/*.rb", verbose: true)
+  [recipes, hostname, out, testglob, verbose]
   rspec_ok = true # if no tests => no failure
 
+  puts "Starting test run for hostname: #{hostname}"
   if Dir.exists?(out)
     puts "Using existing output directory #{out}"
     Dir.glob("#{out}acceptance*").each do |previous|
@@ -128,14 +138,14 @@ def run_tests(recipes, out: "#{$vagrant_dir}#{$node}/generated/", testglob: "tes
       if not run_history.include?(path_to_file)
         run_history.add(path_to_file)
         just_filename = path_to_file.split("/")[-1]
-        rspec_ok = run_rspec($node, path_to_file, "#{out}acceptance_#{cookbook_name}_#{just_filename}", verbose) && rspec_ok
+        rspec_ok = run_rspec(hostname, path_to_file, "#{out}acceptance_#{cookbook_name}_#{just_filename}", verbose) && rspec_ok
       end
     end
   end
 
   path_to_node_acceptance_tests = "#{$vagrant_dir}#{$node}/acceptance"
   if Dir.exists?(path_to_node_acceptance_tests)
-    rspec_ok = run_rspec($node, "#{path_to_node_acceptance_tests}/*.rb", "#{out}acceptance_node", verbose) && rspec_ok
+    rspec_ok = run_rspec(hostname, "#{path_to_node_acceptance_tests}/*.rb", "#{out}acceptance_node", verbose) && rspec_ok
   else
     puts "No node-specific acceptance tests available for #{$node} in #{path_to_node_acceptance_tests}"
   end
@@ -196,6 +206,7 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
     vagrant_cmd = cwd_to_node + "vagrant up --provider=#{provider}"
   elsif /running/.match(v_status)
     # Add "if runlist file older than 1 h, assume force_long"
+    hostname = get_hostname()
     if retest and File.exists?(runlist_file)
       old_run = File.read(runlist_file)
       #run_match = /Run List expands to \[(.*?)\]/.match(old_run)
@@ -209,7 +220,7 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
       if guestint
         rspec_ok = rspec_ok && run_integration_tests(all_cookbooks)
       end
-      rspec_ok = rspec_ok && run_tests(all_cookbooks)
+      rspec_ok = rspec_ok && run_tests(all_cookbooks, hostname)
       if not rspec_ok
         puts "There were test failures!"
         exit 1
@@ -261,6 +272,8 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
     exit 1
   else
     puts "Vagrant provision completed."
+    hostname = get_hostname()
+
     # Run List expands to [repos-channel::haproxy, cms-base::folderstructure, repos-apache2, repos-subversion, repos-rweb, repos-trac, repos-liveserver, repos-indexing, repos-snapshot, repos-vagrant-labs]
     run_match = /Run List expands to \[(.*?)\]/.match(vagrant_run_output)
     if run_match
@@ -278,7 +291,7 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
       if guestint
         rspec_ok = rspec_ok && run_integration_tests(all_cookbooks)
       end
-      rspec_ok = rspec_ok && run_tests(all_cookbooks)
+      rspec_ok = rspec_ok && run_tests(all_cookbooks, hostname)
       if not rspec_ok
         exit 1
       end
