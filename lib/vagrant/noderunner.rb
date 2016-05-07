@@ -11,8 +11,9 @@ require 'open3'
 
 def get_hostname(node: $node, vagrant_dir: $vagrant_dir)
   [node, vagrant_dir]
-  cmd_hostname = "cat /etc/hostname"
-  hostname = Open3.popen3("cd #{ vagrant_dir + node }; vagrant ssh -c \"#{cmd_hostname}\"") { |stdin, stdout, stderr, wait_thr| stdout.read }
+  cmd_hostname = "vagrant ssh-config | grep HostName | sed 's/ *HostName *//'"
+  hostname = Open3.popen3("cd #{ vagrant_dir + node }; #{cmd_hostname}") { |stdin, stdout, stderr, wait_thr| stdout.read }
+  hostname = hostname.chomp
   puts "Vagrant node hostname: #{hostname}"
   return hostname
 end
