@@ -206,7 +206,10 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
     vagrant_cmd = cwd_to_node + "vagrant up --provider=#{provider}"
   elsif /running/.match(v_status)
     # Add "if runlist file older than 1 h, assume force_long"
-    hostname = get_hostname()
+    hostname = $node
+    if provider == "aws"
+      hostname = get_hostname()
+    end
     if retest and File.exists?(runlist_file)
       old_run = File.read(runlist_file)
       #run_match = /Run List expands to \[(.*?)\]/.match(old_run)
@@ -272,7 +275,10 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
     exit 1
   else
     puts "Vagrant provision completed."
-    hostname = get_hostname()
+    hostname = $node
+    if provider == "aws"
+      hostname = get_hostname()
+    end
 
     # Run List expands to [repos-channel::haproxy, cms-base::folderstructure, repos-apache2, repos-subversion, repos-rweb, repos-trac, repos-liveserver, repos-indexing, repos-snapshot, repos-vagrant-labs]
     run_match = /Run List expands to \[(.*?)\]/.match(vagrant_run_output)
