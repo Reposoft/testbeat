@@ -174,7 +174,7 @@ def run_tests(recipes, hostname, out: "#{$vagrant_dir}#{$node}/generated/", test
 end
 
 # guestint: run on-guest integration tests
-def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, verbose: true)
+def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, verbose: true, dependencies: false)
   [node, provider, retest, guestint, verbose]
   $node = node
   options = {}
@@ -218,8 +218,12 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
       recipes = old_run.split(", ")
       print "Recipes (rerun based on #{runlist_file}): "
       puts recipes
-      all_cookbooks = CookbookDecompiler.resolve_dependencies(recipes).to_a
-      puts "All cookbooks included: " + all_cookbooks.join(", ")
+      all_cookbooks = recipes
+      if dependencies
+        # Try to find dependencies for cookbooks identified at provision
+        all_cookbooks = CookbookDecompiler.resolve_dependencies(recipes).to_a
+        puts "All cookbooks included: " + all_cookbooks.join(", ")
+      else
       # code duplicated from uncached runlist below
       rspec_ok = true
       if guestint
