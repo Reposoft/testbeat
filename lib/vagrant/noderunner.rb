@@ -223,7 +223,7 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
         # Try to find dependencies for cookbooks identified at provision
         all_cookbooks = CookbookDecompiler.resolve_dependencies(recipes).to_a
         puts "All cookbooks included: " + all_cookbooks.join(", ")
-      else
+      end
       # code duplicated from uncached runlist below
       rspec_ok = true
       if guestint
