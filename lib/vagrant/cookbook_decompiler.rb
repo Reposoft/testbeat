@@ -20,7 +20,7 @@ def get_include_lines(file)
 end
 
 def get_cookbook_name(line)
-  name_match = /include_recipe.?"([^"]*)"/.match(line)
+  name_match = /include_recipe.?["']([^"']*)["']/.match(line)
   if name_match
     just_name = name_match[1].split("::")[0]
     return just_name
