@@ -273,6 +273,14 @@ class TestbeatContext
     @method
   end
 
+  def redirect
+    @rest_redirect
+  end
+
+  def redirect?
+    !!redirect
+  end
+
   def port
     @rest_port
   end
@@ -353,6 +361,9 @@ class TestbeatContext
       end
       if example_group[:port]
         @rest_port = example_group[:port]
+      end
+      if example_group[:redirect]
+        @rest_redirect = example_group[:redirect]
       end
     end
 
@@ -437,6 +448,13 @@ class TestbeatRestRequest
       end
 
       @response = http.request(req) # Net::HTTPResponse object
+
+      if (@response.code == "301" or @response.code == "302") and @testbeat.redirect
+        @testbeat.logger.info{ "Redirecting #{@response.code} to #{@response['location']}" }
+        redirectTo = URI.parse(@response['location'])
+        req.uri redirectTo
+        @response = http.request(req)
+      end
 
       if @response.code == "401" and @testbeat.user and not @testbeat.unauthenticated?
         u = @testbeat.user

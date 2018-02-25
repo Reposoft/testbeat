@@ -68,6 +68,16 @@ describe "testbeat_rspec" do
 
   end
 
+  describe "GET /", redirect: true do
+
+    it "Should follow redirect when the redirect option is true" do
+      expect(@response).to be_truthy
+      expect("" + @response.code).to be == "200"
+      expect(@response.body).to match(/<h1>Start<\/h1>/)
+    end
+
+  end
+
   describe "HEAD /" do
 
     it "Makes response body empty" do
