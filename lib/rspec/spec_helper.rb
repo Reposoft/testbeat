@@ -273,6 +273,14 @@ class TestbeatContext
     @method
   end
 
+  def redirect
+    @rest_redirect
+  end
+
+  def redirect?
+    !!redirect
+  end
+
   def port
     @rest_port
   end
@@ -353,6 +361,9 @@ class TestbeatContext
       end
       if example_group[:port]
         @rest_port = example_group[:port]
+      end
+      if example_group[:redirect]
+        @rest_redirect = example_group[:redirect]
       end
     end
 
@@ -437,6 +448,23 @@ class TestbeatRestRequest
       end
 
       @response = http.request(req) # Net::HTTPResponse object
+
+      # The redirect must not be authenticated. Consider copying 401 handling to above redirect handling.
+      # Follows a single redirect, no recursive redirects (a feature in a test framework).
+      if (@response.code == "301" or @response.code == "302") and @testbeat.redirect
+        @testbeat.logger.info{ "Redirecting #{@response.code} to #{@response['location']}" }
+        redirectTo = URI.parse(@response['location'])
+        redirectToPath = [redirectTo.path,redirectTo.query].join('?')
+        #reqRedirect = req.new(redirectTo.path, req.to_hash()) # new(path, initheader = nil)
+        reqRedirect = HTTP_VERBS[@testbeat.method].new(redirectToPath) # new(path, initheader = nil)
+        if @testbeat.headers?
+          @testbeat.headers.each {|name, value| reqRedirect[name] = value }
+        end
+        reqRedirect.body = req.body
+        @response = http.request(reqRedirect)
+        req = reqRedirect # Needed by auth support below.
+        @testbeat.logger.info{ "Redirected #{@response.code}" }
+      end
 
       if @response.code == "401" and @testbeat.user and not @testbeat.unauthenticated?
         u = @testbeat.user
