@@ -14,12 +14,27 @@ def get_hostname(node: $node, vagrant_dir: $vagrant_dir)
   cmd_hostname = "vagrant ssh-config | grep HostName | sed 's/ *HostName *//'"
   hostname = Open3.popen3("cd #{ vagrant_dir + node }; #{cmd_hostname}") { |stdin, stdout, stderr, wait_thr| stdout.read }
   hostname = hostname.chomp
-  if hostname =~ /^\d+\.\d+\.\d+\.\d+$/
-    puts "SSH hostname is an IP, #{hostname}, using node name instead as FQDN"
-    hostname = $node
-  end
+  # Allow IP address since we now use the information to write a custom hosts file.
+  #if hostname =~ /^\d+\.\d+\.\d+\.\d+$/
+  #  puts "SSH hostname is an IP, #{hostname}, using node name instead as FQDN"
+  #  hostname = $node
+  #end
   puts "Vagrant node hostname: #{hostname}"
   return hostname
+end
+
+def write_hosts_custom(node: $node, vagrant_dir: $vagrant_dir)
+  # Write hosts_custom file for the testbeat custom resolver.
+  # Surprisingly, ruby supports a CNAME-like entry were left hand side is also a hostname.
+  hostname = get_hostname()
+  File.write("#{ vagrant_dir + node }/hosts_custom", "#{hostname}    #{node}")
+  puts "Custom hosts file where #{node} resolves to #{hostname}"
+end
+
+def delete_hosts_custom(node: $node, vagrant_dir: $vagrant_dir)
+  path = "#{ vagrant_dir + node }/hosts_custom"
+  File.delete(path) if File.exist?(path)
+  puts "Custom hosts file cleaned up for #{node}"
 end
 
 # Get first matching subgroup
@@ -211,8 +226,8 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
     vagrant_cmd = cwd_to_node + "vagrant up --provider=#{provider}"
   elsif /running/.match(v_status)
     # Add "if runlist file older than 1 h, assume force_long"
-    hostname = get_hostname()
     if retest and File.exists?(runlist_file)
+      write_hosts_custom()
       old_run = File.read(runlist_file)
       #run_match = /Run List expands to \[(.*?)\]/.match(old_run)
       recipes = old_run.split(", ")
@@ -229,7 +244,8 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
       if guestint
         rspec_ok = rspec_ok && run_integration_tests(all_cookbooks)
       end
-      rspec_ok = rspec_ok && run_tests(all_cookbooks, hostname)
+      rspec_ok = rspec_ok && run_tests(all_cookbooks, node)
+      delete_hosts_custom()
       if not rspec_ok
         puts "There were test failures!"
         exit 1
@@ -281,7 +297,7 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
     exit 1
   else
     puts "Vagrant provision completed."
-    hostname = get_hostname()
+    write_hosts_custom()
 
     # Run List expands to [repos-channel::haproxy, cms-base::folderstructure, repos-apache2, repos-subversion, repos-rweb, repos-trac, repos-liveserver, repos-indexing, repos-snapshot, repos-vagrant-labs]
     run_match = /Run List expands to \[(.*?)\]/.match(vagrant_run_output)
@@ -300,7 +316,8 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
       if guestint
         rspec_ok = rspec_ok && run_integration_tests(all_cookbooks)
       end
-      rspec_ok = rspec_ok && run_tests(all_cookbooks, hostname)
+      rspec_ok = rspec_ok && run_tests(all_cookbooks, node)
+      delete_hosts_custom()
       if not rspec_ok
         exit 1
       end

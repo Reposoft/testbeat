@@ -1,5 +1,6 @@
 
 require "awesome_print"
+require "resolv-replace"
 require "net/http"
 require "openssl"
 require "json"
@@ -41,6 +42,18 @@ class TestbeatNode
     if !@name || @name.length == 0
       logger.error { "Node name not set, at #{Dir.pwd}" }
       raise "Node name not set"
+    end
+    hostsFile = "#{folder}/hosts_custom"
+    if File.exists?(hostsFile)
+      hosts_resolver = Resolv::Hosts.new(hostsFile)
+      dns_resolver = Resolv::DNS.new
+      Resolv::DefaultResolver.replace_resolvers([hosts_resolver, dns_resolver])
+      logger.info { "Custom DNS for #{nodename} from #{hostsFile}" }
+      # TODO: Remove puts when stable.
+      puts "Custom DNS for #{nodename} from #{hostsFile}"
+    else
+      logger.warn { "Failed to locate custom hosts file, from #{hostsFile}, at #{Dir.pwd}" }
+      puts "Failed to locate custom hosts file, from #{hostsFile}, at #{Dir.pwd}"
     end
     attributesFile = "#{folder}/chef.json"
     if File.exists?(attributesFile)
@@ -224,7 +237,11 @@ class TestbeatContext
     @context_block_id = "#{example.metadata[:example_group][:block]}"
 
     # defaults
-    @user = { :username => 'testuser', :password => 'testpassword' }
+    if ENV.key?( 'TESTBEAT_SESSION' )
+      @session = ENV['TESTBEAT_SESSION']
+    else
+      @user = { :username => 'testuser', :password => 'testpassword' }
+    end
     @unencrypted = false
     @unauthenticated = false
     @rest = false
@@ -256,6 +273,10 @@ class TestbeatContext
 
   def user
     @user
+  end
+
+  def session
+    @session
   end
 
   # Returns the REST resource if specified in context
@@ -403,8 +424,8 @@ class TestbeatRestRequest
   def initialize(node, testbeat)
     #@headers = {}
     @timeout = 10
-    @node = node
-    @testbeat = testbeat
+    @node = node # TestbeatNode
+    @testbeat = testbeat #TestbeatContext
   end
 
   # Initiate the request and return Net::HTTPResponse object,
@@ -431,6 +452,11 @@ class TestbeatRestRequest
       end
 
       req = HTTP_VERBS[@testbeat.method].new(@testbeat.resource)
+      if @testbeat.session and not @testbeat.unauthenticated?
+        @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{@testbeat.session}" }
+        #puts "Authenticating to #{@testbeat.resource} with #{@testbeat.session}"
+        req['Cookie'] = @testbeat.session
+      end
       if @testbeat.headers?
         @testbeat.headers.each {|name, value| req[name] = value }
       end
@@ -543,6 +569,6 @@ RSpec.configure do |config|
   end
 
   config.after(:example) do
-    #p "------------- after"
+    #puts "------------- after"
   end
 end
