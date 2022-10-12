@@ -483,6 +483,11 @@ class TestbeatRestRequest
         redirectToPath = [redirectTo.path,redirectTo.query].join('?')
         #reqRedirect = req.new(redirectTo.path, req.to_hash()) # new(path, initheader = nil)
         reqRedirect = HTTP_VERBS[@testbeat.method].new(redirectToPath) # new(path, initheader = nil)
+        if @testbeat.session and not @testbeat.unauthenticated?
+          @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{@testbeat.session}" }
+          #puts "Authenticating redirect to #{@testbeat.resource} with #{@testbeat.session}"
+          reqRedirect['Cookie'] = @testbeat.session
+        end
         if @testbeat.headers?
           @testbeat.headers.each {|name, value| reqRedirect[name] = value }
         end
