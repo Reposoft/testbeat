@@ -457,6 +457,12 @@ class TestbeatRestRequest
         #puts "Authenticating to #{@testbeat.resource} with #{@testbeat.session}"
         req['Cookie'] = @testbeat.session
       end
+      if @testbeat.user and not @testbeat.unauthenticated?
+        # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
+        u = @testbeat.user
+        @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
+        req.basic_auth u[:username], u[:password]
+      end
       if @testbeat.headers?
         @testbeat.headers.each {|name, value| req[name] = value }
       end
@@ -495,13 +501,6 @@ class TestbeatRestRequest
         @response = http.request(reqRedirect)
         req = reqRedirect # Needed by auth support below.
         @testbeat.logger.info{ "Redirected #{@response.code}" }
-      end
-
-      if @response.code == "401" and @testbeat.user and not @testbeat.unauthenticated?
-        u = @testbeat.user
-        @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
-        req.basic_auth u[:username], u[:password]
-        @response = http.request(req)
       end
 
       @testbeat.logger.info{ "Request #{@testbeat.resource} responded #{@response.code} #{@response.message}" }
