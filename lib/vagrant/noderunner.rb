@@ -33,8 +33,9 @@ end
 
 def delete_hosts_custom(node: $node, vagrant_dir: $vagrant_dir)
   path = "#{ vagrant_dir + node }/hosts_custom"
-  File.delete(path) if File.exist?(path)
-  puts "Custom hosts file cleaned up for #{node}"
+  #File.delete(path) if File.exist?(path)
+  #puts "Custom hosts file cleaned up for #{node}"
+  puts "Custom hosts file left behind #{node}"
 end
 
 # Get first matching subgroup
