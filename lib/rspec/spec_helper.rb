@@ -498,11 +498,12 @@ class TestbeatRestRequest
           # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
           u = @testbeat.user
           @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
-          req.basic_auth u[:username], u[:password]
+          reqRedirect.basic_auth u[:username], u[:password]
         end
         if @testbeat.headers?
           @testbeat.headers.each {|name, value| reqRedirect[name] = value }
         end
+        # preserve POST body across redirect
         reqRedirect.body = req.body
         @response = http.request(reqRedirect)
         req = reqRedirect # Needed by auth support below.
