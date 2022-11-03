@@ -33,8 +33,9 @@ end
 
 def delete_hosts_custom(node: $node, vagrant_dir: $vagrant_dir)
   path = "#{ vagrant_dir + node }/hosts_custom"
-  File.delete(path) if File.exist?(path)
-  puts "Custom hosts file cleaned up for #{node}"
+  #File.delete(path) if File.exist?(path)
+  #puts "Custom hosts file cleaned up for #{node}"
+  puts "Custom hosts file left behind #{node}"
 end
 
 # Get first matching subgroup
@@ -254,7 +255,10 @@ def main(node: "labs01", provider: "virtualbox", retest: false, guestint: true, 
       exit 0
     else
       puts "Vagrant node running, provision..."
-      vagrant_cmd = cwd_to_node + "vagrant provision"
+      # Some providers, like 'aws', require reload in order to sync updated cookbooks before provision.
+      # Execute individual tests instead when quick iterations are needed.
+      # TODO: consider condition based on #{provider}.
+      vagrant_cmd = cwd_to_node + "vagrant reload --provision"
     end
   else
     $stderr.puts "Unknown Vagrant state: #{v_status}"

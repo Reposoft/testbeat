@@ -457,6 +457,12 @@ class TestbeatRestRequest
         #puts "Authenticating to #{@testbeat.resource} with #{@testbeat.session}"
         req['Cookie'] = @testbeat.session
       end
+      if @testbeat.user and not @testbeat.unauthenticated?
+        # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
+        u = @testbeat.user
+        @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
+        req.basic_auth u[:username], u[:password]
+      end
       if @testbeat.headers?
         @testbeat.headers.each {|name, value| req[name] = value }
       end
@@ -483,20 +489,25 @@ class TestbeatRestRequest
         redirectToPath = [redirectTo.path,redirectTo.query].join('?')
         #reqRedirect = req.new(redirectTo.path, req.to_hash()) # new(path, initheader = nil)
         reqRedirect = HTTP_VERBS[@testbeat.method].new(redirectToPath) # new(path, initheader = nil)
+        if @testbeat.session and not @testbeat.unauthenticated?
+          @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{@testbeat.session}" }
+          #puts "Authenticating redirect to #{@testbeat.resource} with #{@testbeat.session}"
+          reqRedirect['Cookie'] = @testbeat.session
+        end
+        if @testbeat.user and not @testbeat.unauthenticated?
+          # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
+          u = @testbeat.user
+          @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
+          reqRedirect.basic_auth u[:username], u[:password]
+        end
         if @testbeat.headers?
           @testbeat.headers.each {|name, value| reqRedirect[name] = value }
         end
+        # preserve POST body across redirect
         reqRedirect.body = req.body
         @response = http.request(reqRedirect)
         req = reqRedirect # Needed by auth support below.
         @testbeat.logger.info{ "Redirected #{@response.code}" }
-      end
-
-      if @response.code == "401" and @testbeat.user and not @testbeat.unauthenticated?
-        u = @testbeat.user
-        @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
-        req.basic_auth u[:username], u[:password]
-        @response = http.request(req)
       end
 
       @testbeat.logger.info{ "Request #{@testbeat.resource} responded #{@response.code} #{@response.message}" }
