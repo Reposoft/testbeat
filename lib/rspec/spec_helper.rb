@@ -347,6 +347,10 @@ class TestbeatContext
     unencrypted? || @unauthenticated
   end
 
+  def authdenied?
+    unencrypted? || @authdenied
+  end
+
   def unencrypted?
     @unencrypted
   end
@@ -366,6 +370,8 @@ class TestbeatContext
       s += " unencrypted"
     elsif @unauthenticated
       s += " unauthenticated"
+    elsif @authdenied
+      s += " authdenied"
     end
     s
   end
