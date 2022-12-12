@@ -514,10 +514,10 @@ class TestbeatRestRequest
         if @testbeat.session and not @testbeat.unauthenticated?
           if not @testbeat.authdenied?
             @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with session #{@testbeat.session}" }
-            req['Cookie'] = @testbeat.session
+            reqRedirect['Cookie'] = @testbeat.session
           else
             @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} expect denied #{@testbeat.session_denied}" }
-            req['Cookie'] = @testbeat.session_denied
+            reqRedirect['Cookie'] = @testbeat.session_denied
           end
         end
         if @testbeat.user and not @testbeat.unauthenticated? and not @testbeat.authdenied?

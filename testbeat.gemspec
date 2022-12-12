@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'testbeat'
-  s.version     = '0.8.3'
+  s.version     = '0.8.4'
   s.date        = '2022-12-12'
   s.summary     = 'REST acceptance testing framework'
   s.description = 'Rspec spec_helper and Vagrant integration for HTTP level testing, on a box from the outside'
