@@ -415,6 +415,10 @@ class TestbeatContext
       @unauthenticated = true
     }
 
+    /authdenied/i.match(a) {
+      @authdenied = true
+    }
+
     HTTP_VERB_RESOURCE.match(a) { |rest|
       @rest = true
       @method = rest[1]
