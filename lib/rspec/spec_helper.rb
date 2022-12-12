@@ -241,6 +241,7 @@ class TestbeatContext
       @session = ENV['TESTBEAT_SESSION']
       if ENV.key?( 'TESTBEAT_SESSION_DENIED' )
         @session_denied = ENV['TESTBEAT_SESSION_DENIED']
+      end
     else
       @user = { :username => 'testuser', :password => 'testpassword' }
     end
