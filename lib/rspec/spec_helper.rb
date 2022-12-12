@@ -348,7 +348,7 @@ class TestbeatContext
   end
 
   def authdenied?
-    unencrypted? || @authdenied
+    @authdenied
   end
 
   def unencrypted?
@@ -479,7 +479,7 @@ class TestbeatRestRequest
           req['Cookie'] = @testbeat.session_denied
         end
       end
-      if @testbeat.user and not @testbeat.unauthenticated?
+      if @testbeat.user and not @testbeat.unauthenticated? and not @testbeat.authdenied?
         # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
         u = @testbeat.user
         @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
@@ -520,7 +520,7 @@ class TestbeatRestRequest
             req['Cookie'] = @testbeat.session_denied
           end
         end
-        if @testbeat.user and not @testbeat.unauthenticated?
+        if @testbeat.user and not @testbeat.unauthenticated? and not @testbeat.authdenied?
           # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
           u = @testbeat.user
           @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
