@@ -239,11 +239,15 @@ class TestbeatContext
     # defaults
     if ENV.key?( 'TESTBEAT_SESSION' )
       @session = ENV['TESTBEAT_SESSION']
+      if ENV.key?( 'TESTBEAT_SESSION_DENIED' )
+        @session_denied = ENV['TESTBEAT_SESSION_DENIED']
+      end
     else
       @user = { :username => 'testuser', :password => 'testpassword' }
     end
     @unencrypted = false
     @unauthenticated = false
+    @authdenied = false
     @rest = false
     @reprovision = false
 
@@ -277,6 +281,10 @@ class TestbeatContext
 
   def session
     @session
+  end
+
+  def session_denied
+    @session_denied
   end
 
   # Returns the REST resource if specified in context
@@ -339,6 +347,10 @@ class TestbeatContext
     unencrypted? || @unauthenticated
   end
 
+  def authdenied?
+    @authdenied
+  end
+
   def unencrypted?
     @unencrypted
   end
@@ -358,6 +370,8 @@ class TestbeatContext
       s += " unencrypted"
     elsif @unauthenticated
       s += " unauthenticated"
+    elsif @authdenied
+      s += " authdenied"
     end
     s
   end
@@ -399,6 +413,10 @@ class TestbeatContext
 
     /unauthenticated/i.match(a) {
       @unauthenticated = true
+    }
+
+    /authdenied/i.match(a) {
+      @authdenied = true
     }
 
     HTTP_VERB_RESOURCE.match(a) { |rest|
@@ -453,11 +471,15 @@ class TestbeatRestRequest
 
       req = HTTP_VERBS[@testbeat.method].new(@testbeat.resource)
       if @testbeat.session and not @testbeat.unauthenticated?
-        @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{@testbeat.session}" }
-        #puts "Authenticating to #{@testbeat.resource} with #{@testbeat.session}"
-        req['Cookie'] = @testbeat.session
+        if not @testbeat.authdenied?
+          @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with session #{@testbeat.session}" }
+          req['Cookie'] = @testbeat.session
+        else
+          @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} expect denied #{@testbeat.session_denied}" }
+          req['Cookie'] = @testbeat.session_denied
+        end
       end
-      if @testbeat.user and not @testbeat.unauthenticated?
+      if @testbeat.user and not @testbeat.unauthenticated? and not @testbeat.authdenied?
         # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
         u = @testbeat.user
         @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
@@ -490,11 +512,15 @@ class TestbeatRestRequest
         #reqRedirect = req.new(redirectTo.path, req.to_hash()) # new(path, initheader = nil)
         reqRedirect = HTTP_VERBS[@testbeat.method].new(redirectToPath) # new(path, initheader = nil)
         if @testbeat.session and not @testbeat.unauthenticated?
-          @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{@testbeat.session}" }
-          #puts "Authenticating redirect to #{@testbeat.resource} with #{@testbeat.session}"
-          reqRedirect['Cookie'] = @testbeat.session
+          if not @testbeat.authdenied?
+            @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with session #{@testbeat.session}" }
+            req['Cookie'] = @testbeat.session
+          else
+            @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} expect denied #{@testbeat.session_denied}" }
+            req['Cookie'] = @testbeat.session_denied
+          end
         end
-        if @testbeat.user and not @testbeat.unauthenticated?
+        if @testbeat.user and not @testbeat.unauthenticated? and not @testbeat.authdenied?
           # Now using forced Basic Auth. Test the realm by using 'unauthenticated'.
           u = @testbeat.user
           @testbeat.logger.info{ "Authenticating to #{@testbeat.resource} with #{u[:username]}:#{u[:password]}" }
